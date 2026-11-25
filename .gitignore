@@ -1,0 +1,6 @@
+_reference/
+__pycache__/
+*.pyc
+tools/input/
+tools/device_material_info.txt
+tools/pp_device_material.generated.h
