@@ -1,6 +1,10 @@
 /*
  * dump_plusplus_flash.ino -- Pokemon GO Plus + external-flash reader for ESP32
  *
+ * NOTE: the same reader (commands j/d/D/x/X) is now built into the emulator
+ * firmware itself -- you normally do NOT need this sketch. It is kept for a
+ * dedicated reader setup. See docs/keys_extraction.md.
+ *
  * Companion to docs/keys_extraction.md. Two modes, selected over the serial
  * console (115200 baud):
  *

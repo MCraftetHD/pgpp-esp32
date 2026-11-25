@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
-"""Capture a hex dump from the ESP32 'dump_plusplus_flash' sketch into a file.
+"""Capture a hex flash dump from the ESP32 into a file.
 
-Connect the ESP32 running tools/dump_plusplus_flash (mode A) over USB, send
-'d' (or 'D <start> <end>'), and this script records the BEGIN/END hex block
-into a raw binary image you can feed to tools/read_flash_data.py.
+Works with BOTH readers:
+  - the pgpp_esp32 emulator firmware console (command 'd' / 'D <start> <end>')
+  - the standalone tools/dump_plusplus_flash sketch
+
+The script sends 'd' by default, records the BEGIN/END hex block, and writes
+a raw binary image you can feed to tools/read_flash_data.py.
 
 Usage:
     pip install pyserial       # once
     python3 tools/capture_dump.py            # uses the default serial port
     python3 tools/capture_dump.py --port COM5 --baud 115200
+    python3 tools/capture_dump.py --range "0 800000"   # full 8 MiB backup
 
 The output file lands in tools/input/flash.bin (the reader's default input
 location).
@@ -35,6 +39,7 @@ def parse_args():
     ap.add_argument("--port", default="/dev/ttyUSB0",
                     help="serial port (default /dev/ttyUSB0, e.g. COM5 on Windows)")
     ap.add_argument("--baud", type=int, default=115200)
+    ap.add_argument("--cmd", default="d", help="dump command to send (default 'd')")
     ap.add_argument("--out", default=str(OUTPUT_FILE))
     return ap.parse_args()
 
@@ -69,12 +74,13 @@ def main():
         ser.write(b"\n")
         time.sleep(0.3)
         banner = ser.read(4096).decode(errors="replace")
-        if "PGPP flash dump tool" not in banner:
-            print("WARNING: sketch banner not seen; pressing ESP32 reset may help.")
+        if "PGPP flash dump tool" not in banner and "pgpp-esp32 console" not in banner:
+            print("WARNING: firmware banner not seen; pressing ESP32 reset may help.")
             print(banner[:400])
 
-        print("Sending 'd' (dump default region 0x0000-0x10000)...")
-        ser.write(b"d\n")
+        if args.cmd == "d":
+            print("Sending 'd' (dump default region 0x0000-0x10000)...")
+        ser.write((args.cmd + "\n").encode())
 
         image = bytearray(FLASH_SIZE)
         captured = 0

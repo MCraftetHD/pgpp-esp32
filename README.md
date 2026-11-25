@@ -12,6 +12,23 @@ at once** on one ESP32.
 > Niantic updates have repeatedly broken third-party auto-catch devices in
 > the past (e.g. app 0.415.x in 2026); expect protocol maintenance.
 
+## Quick start (one firmware, no programmer)
+
+1. **Flash once** — build `firmware/pgpp_esp32.ino` (flags below) and upload
+   over the ESP32's USB-C port. This one image contains the emulator *and*
+   the donor-flash reader.
+2. **Solder 4 wires** from the Plus+'s flash chip to IO21/IO25/IO23/IO22.
+3. **Serial console → `d`** — the ESP32 dumps the Plus+'s key material
+   (`x` = passive sniffer variant; full guide: `docs/keys_extraction.md`).
+4. **`python3 tools/read_flash_data.py`** — turns the dump into key lines.
+5. **Serial console → `k`, paste the lines, `save`** — keys in NVS, no
+   recompile.
+6. **Pair** with your phone. After that, phones reconnect automatically —
+   no re-pairing (up to 4 phones).
+
+> No Arduino hardware is involved: the *Arduino IDE / arduino-cli* is just
+> the free PC software that compiles and flashes the ESP32 over USB-C.
+
 ## Features
 
 - Full PGPP pairing + reconnect protocol (auth challenge/response, Service-D
@@ -39,6 +56,9 @@ is onboard — no screen, no external parts required.
 | D2 button (GPIO2) | 2 | click = cycle catch mode (off → all → new → spin-only) · hold 3 s = toggle auto spin |
 | Onboard blue LED | 2 | indication patterns below |
 | EN | — | hardware reset |
+
+The built-in donor-flash reader taps **IO21 (CS), IO22 (SCK), IO23 (MOSI),
+IO25 (MISO)** — leave those pins free (see `docs/keys_extraction.md`).
 
 > GPIO2 is both the LED and the D2 button on this board; the LED patterns are
 > what you watch, button presses are what you click. If your variant lacks the
@@ -140,6 +160,10 @@ Without keys the firmware runs but refuses to advertise or pair.
 | `L` | LED blink test |
 | `S` | save settings now |
 | `r` | restart |
+| `j` | flash reader: JEDEC ID check (expect `C2 25 37`) |
+| `d` | flash reader: dump 0x0000–0x10000 + verify (Plus+ off, taps wired) |
+| `D <start> <end>` | flash reader: dump a hex range (`D 0 800000` = full backup) |
+| `x` / `X` | flash reader: passive boot sniffer start / stop+coverage |
 
 ## Multi-phone notes (experimental)
 
@@ -163,7 +187,7 @@ Without keys the firmware runs but refuses to advertise or pair.
 firmware/pgpp_esp32/   the sketch + protocol modules (compile this)
 tools/read_flash_data.py     flash dump -> keys report + console lines
 tools/capture_dump.py        serial capture of the dump sketch output
-tools/dump_plusplus_flash/   ESP32 dump/sniffer sketch for key extraction
+tools/dump_plusplus_flash/   standalone dump/sniffer sketch (reader is also built into the firmware)
 tools/host_check/            host-side syntax check stubs
 docs/keys_extraction.md      donor key extraction guide (solder-first)
 _reference/                  upstream sources (not part of the build)

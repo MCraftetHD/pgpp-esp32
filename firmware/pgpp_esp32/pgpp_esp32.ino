@@ -537,7 +537,36 @@ void setup()
   ppRunBootSequence(makeAppBootRefs());
 }
 
+// ---------------- Reconnect availability ----------------
+// A stray scanner (another phone's background BLE, a laptop) can hold a
+// session slot open forever in a pre-auth stage; with all slots taken the
+// real phone cannot reconnect. Drop sessions that stay unauthenticated too
+// long so the emulator keeps advertising for the phones that matter.
+static const uint32_t PP_STALE_UNPAIRED_MS = 90000;
+
+static void dropStaleUnpairedSessions()
+{
+  uint32_t now = millis();
+  for (int i = 0; i < PP_MAX_CONNECTIONS; ++i) {
+    PPSession& s = gSessions[i];
+    if (!s.used || s.connHandle == BLE_CONN_HANDLE_INVALID) {
+      continue;
+    }
+    if (s.pairingStage >= PAIR_STAGE_AUTHENTICATED || s.connStartedAt == 0) {
+      continue;
+    }
+    if (now - s.connStartedAt < PP_STALE_UNPAIRED_MS) {
+      continue;
+    }
+    Serial.print("Stale unpaired session slot ");
+    Serial.print(i);
+    Serial.println(" -> dropping to keep the emulator available for reconnect");
+    sd_ble_gap_disconnect(s.connHandle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
+  }
+}
+
 void loop()
 {
   ppRunMainLoopTick(makeAppLoopRefs());
+  dropStaleUnpairedSessions();
 }
