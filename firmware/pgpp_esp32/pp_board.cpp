@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "pp_board.h"
+#include "pp_flash_dump.h"
 #include "pp_session.h"
 #include "pp_record_store.h"
 #include "pp_device_material.h"
@@ -240,6 +241,7 @@ static void printHelp()
   Serial.println("  L  - LED blink test");
   Serial.println("  S  - save settings now");
   Serial.println("  r  - restart ESP32");
+  ppFlashDumpHelp();
 }
 
 static void printStatus()
@@ -448,6 +450,9 @@ static void handleConsoleLine(const char* line)
   }
 
   if (line[0] == 0 || line[0] == '\n' || line[0] == '\r') {
+    return;
+  }
+  if (ppFlashDumpConsoleLine(line)) {
     return;
   }
   switch (line[0]) {

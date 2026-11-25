@@ -117,4 +117,8 @@ typedef enum { ESP_OK = 0, ESP_ERR_INVALID_ARG = -1 } esp_err_t;
 #define ESP_PWR_LVL_P3 3
 
 inline int xPortGetCoreID() { return 0; }
+typedef int BaseType_t;
+typedef void* TaskHandle_t;
+inline BaseType_t xTaskCreatePinnedToCore(void (*)(void*), const char*, uint32_t, void*, unsigned int, TaskHandle_t*, int) { return 1; }
+inline void vTaskDelete(void*) {}
 typedef void (*esp_timer_cb_t)(void*);
